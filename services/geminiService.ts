@@ -9,27 +9,59 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 export async function changePose(
     base64ImageData: string,
     mimeType: string,
+    base64BackgroundImageData: string | null,
+    backgroundMimeType: string | null,
+    base64ClothingImageData: string | null,
+    clothingMimeType: string | null,
     posePrompt: string,
     backgroundPrompt: string,
     clothingPrompt: string,
     preserveBodyShape: boolean
 ): Promise<string> {
     try {
-        let text = `Given the image of the person, `;
-        if (posePrompt && posePrompt.trim() !== '') {
-            text += `change their pose to be: "${posePrompt}".`;
-        } else {
-            text += `keep their original pose.`;
-        }
+        const personImagePart = {
+            inlineData: {
+                data: base64ImageData,
+                mimeType: mimeType,
+            },
+        };
 
-        if (clothingPrompt && clothingPrompt.trim() !== '') {
-            text += ` Also, change their clothing and style to be: "${clothingPrompt}".`;
+        const parts: any[] = [personImagePart];
+        let text = `Given the provided images and instructions, generate a new image. The first image is always the person to be modified.`;
+
+        if (base64ClothingImageData && clothingMimeType) {
+            const clothingImagePart = { inlineData: { data: base64ClothingImageData, mimeType: clothingMimeType } };
+            parts.push(clothingImagePart);
+            text += ` Use the second image as a reference to change the clothing of the person in the first image.`;
+            if (clothingPrompt && clothingPrompt.trim() !== '') {
+                 text += ` When doing so, also follow these instructions: "${clothingPrompt}".`;
+            }
+        } else if (clothingPrompt && clothingPrompt.trim() !== '') {
+            text += ` Change their clothing and style to be: "${clothingPrompt}".`;
         }
         
-        if (backgroundPrompt && backgroundPrompt.trim() !== '') {
+        if (base64BackgroundImageData && backgroundMimeType) {
+            const backgroundImagePart = {
+                inlineData: {
+                    data: base64BackgroundImageData,
+                    mimeType: backgroundMimeType,
+                },
+            };
+            parts.push(backgroundImagePart);
+            text += ` Place the person into the provided background image.`;
+            if (backgroundPrompt && backgroundPrompt.trim() !== '') {
+                 text += ` When doing so, follow these instructions: "${backgroundPrompt}".`;
+            }
+        } else if (backgroundPrompt && backgroundPrompt.trim() !== '') {
             text += ` Also, change the background to be: "${backgroundPrompt}".`;
         } else {
             text += ` Keep the original background.`;
+        }
+        
+        if (posePrompt && posePrompt.trim() !== '') {
+            text += ` Change their pose to be: "${posePrompt}".`;
+        } else {
+            text += ` Keep their original pose.`;
         }
         
         text += ` The person's facial features and identity from the original image must be preserved.`;
@@ -38,15 +70,8 @@ export async function changePose(
             text += ` It is crucial to also preserve the person's original body shape and size. Do not make them thinner, larger, or change their proportions.`;
         }
 
-        const parts = [
-            {
-                inlineData: {
-                    data: base64ImageData,
-                    mimeType: mimeType,
-                },
-            },
-            { text: text }
-        ];
+        parts.push({ text: text });
+
 
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image-preview',

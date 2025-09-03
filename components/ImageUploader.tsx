@@ -1,13 +1,13 @@
-
 import React, { useCallback, useState } from 'react';
 import type { ImageFile } from '../types';
 import { UploadIcon } from './icons';
 
 interface ImageUploaderProps {
   onImageUpload: (imageFile: ImageFile) => void;
+  imageSrc?: string;
 }
 
-export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload }) => {
+export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, imageSrc }) => {
   const [isDragging, setIsDragging] = useState(false);
 
   const handleFileChange = (file: File | null) => {
@@ -48,18 +48,29 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload }) =
 
   return (
     <div
-      className={`relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-300 ${isDragging ? 'border-cyan-500 bg-gray-700/50' : 'border-gray-600 hover:border-cyan-600 bg-gray-800'}`}
+      className={`group relative border-2 border-dashed rounded-lg text-center cursor-pointer transition-all duration-300 ${isDragging ? 'border-cyan-500 bg-gray-700/50' : 'border-gray-600 hover:border-cyan-600 bg-gray-800'} ${imageSrc ? 'p-2' : 'p-8'}`}
       onDragEnter={onDragEnter}
       onDragLeave={onDragLeave}
       onDragOver={onDragOver}
       onDrop={onDrop}
       onClick={() => document.getElementById('file-input')?.click()}
     >
-      <div className="flex flex-col items-center justify-center text-gray-400">
-        <UploadIcon className="w-12 h-12 mb-4" />
-        <p className="font-semibold">Click to upload or drag & drop</p>
-        <p className="text-sm">PNG, JPG, or WEBP</p>
-      </div>
+      {imageSrc ? (
+        <div className="relative aspect-square">
+           <img src={imageSrc} alt="Your upload" className="w-full h-full object-contain rounded-md" />
+           <div className="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg">
+                <UploadIcon className="w-12 h-12 mb-4" />
+                <p className="font-semibold">Click or drag to change image</p>
+           </div>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center text-gray-400">
+          <UploadIcon className="w-12 h-12 mb-4" />
+          <p className="font-semibold">Click to upload or drag & drop</p>
+          <p className="text-sm">PNG, JPG, or WEBP</p>
+        </div>
+      )}
+
       <input
         id="file-input"
         type="file"
