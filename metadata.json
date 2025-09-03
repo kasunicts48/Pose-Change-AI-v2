@@ -1,0 +1,5 @@
+{
+  "name": "Pose Changer AI v2",
+  "description": "An AI-powered web application that allows users to upload a photo and describe a new pose. The app uses Gemini to generate a new image of the person in the desired pose.",
+  "requestFramePermissions": []
+}
